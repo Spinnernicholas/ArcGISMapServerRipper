@@ -22,7 +22,7 @@ const getObjectCount = async () => {
 }
 
 const fetch_data_from_endpoint = async (start, end) => {
-    const requesturl = `${argv.url}/query?where=OBJECTID>${start} AND OBJECTID<=${end}&outFields=*&f=geojson`;
+    const requesturl = `${argv.url}/query?where=OBJECTID>=${start} AND OBJECTID<${end}&outFields=*&f=geojson`;
     if(argv.debug) console.log(`Fetching data from ${requesturl}`);
     const response = await axios.get(requesturl);
     if(argv.debug) console.log(`Fetched data from ${start} to ${end}`);
@@ -57,15 +57,19 @@ const main = async () => {
     const rangeSize = await getTransferLimit();
     const count = await getObjectCount();
     let start = 0;
-    let end = start + rangeSize;
+    let end = start + rangeSize + 1;
     if(argv.debug) console.log(`Range size: ${rangeSize}`);
     if(argv.debug) console.log(`Total count: ${count}`);
     if(argv.debug) console.log(`Start: ${start}, End: ${end}`);
 
+    let totalLoaded = 0;
+
     while (start < count) {
         const data = await fetch_data_from_endpoint(start, end);
+        totalLoaded += data.features.length;
+        if(argv.debug) console.log(`Loaded ${data.features.length} features. Total loaded: ${totalLoaded} / ${count}`)
         combinedData.features = combine_features(combinedData, data);
-        start = end + 1;
+        start = end;
         end = start + rangeSize;
     }
 
